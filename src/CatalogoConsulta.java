@@ -87,18 +87,7 @@ public class CatalogoConsulta extends JFrame {
             }
         });
 
-        olvidarContraseñaBtn.addActionListener(e -> {
-            String user = userField.getText();
-            if (adminCreds.containsKey(user)) {
-                JOptionPane.showMessageDialog(null, "Tu contraseña es: " + adminCreds.get(user));
-            } else if (profCreds.containsKey(user)) {
-                JOptionPane.showMessageDialog(null, "Tu contraseña es: " + profCreds.get(user));
-            } else if (alumnoCreds.containsKey(user)) {
-                JOptionPane.showMessageDialog(null, "Tu contraseña es: " + alumnoCreds.get(user));
-            } else {
-                JOptionPane.showMessageDialog(null, "Usuario no encontrado.");
-            }
-        });
+        olvidarContraseñaBtn.addActionListener(e -> mostrarOlvidoContraseña());
     }
 
     private boolean autenticar(String tipo, String user, String pass) {
@@ -112,6 +101,37 @@ public class CatalogoConsulta extends JFrame {
             default:
                 return false;
         }
+    }
+
+    private void mostrarOlvidoContraseña() {
+        JFrame olvidoFrame = new JFrame("Olvidaste la contraseña");
+        olvidoFrame.setSize(400, 200);
+        olvidoFrame.setLocationRelativeTo(null);
+
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+
+        JLabel label = new JLabel("Ingresa tu nombre de usuario:");
+        JTextField userField = new JTextField(15);
+
+        JButton solicitarBtn = new JButton("Solicitar contraseña");
+
+        panel.add(label);
+        panel.add(userField);
+        panel.add(solicitarBtn);
+
+        olvidoFrame.add(panel);
+        olvidoFrame.setVisible(true);
+
+        solicitarBtn.addActionListener(e -> {
+            String usuario = userField.getText();
+            if (adminCreds.containsKey(usuario) || profCreds.containsKey(usuario) || alumnoCreds.containsKey(usuario)) {
+                JOptionPane.showMessageDialog(olvidoFrame, "Tu contraseña será enviada a tu correo universitario en 24 horas por el departamento de administración.");
+            } else {
+                JOptionPane.showMessageDialog(olvidoFrame, "Usuario no encontrado.");
+            }
+            olvidoFrame.dispose();
+        });
     }
 
     public void mostrarCatalogo(String tipoUsuario) {
@@ -269,32 +289,41 @@ public class CatalogoConsulta extends JFrame {
     private void mostrarCatalogoLista() {
         StringBuilder sb = new StringBuilder("Listado de ejemplares:\n");
         for (Material m : catalogo.values()) {
-            sb.append(m.codigo).append(" - ").append(m.titulo).append(" (").append(m.tipo).append(")\n");
+            sb.append(m.codigo).append(" - ").append(m.titulo).append(" - ").append(m.autor).append(" - ").append(m.tipo).append("\n");
         }
-
-        // Mostrar libros prestados si es un profesor
-        if (prestamos.size() > 0) {
-            sb.append("\nLibros prestados:\n");
-            for (Map.Entry<String, String> entry : prestamos.entrySet()) {
-                sb.append(entry.getKey()).append(" - Prestado a: ").append(entry.getValue()).append("\n");
-            }
-        }
-
-        JTextArea textArea = new JTextArea(sb.toString(), 15, 40);
-        textArea.setEditable(false);
-        JOptionPane.showMessageDialog(null, new JScrollPane(textArea), "Ejemplares", JOptionPane.INFORMATION_MESSAGE);
+        JOptionPane.showMessageDialog(null, sb.toString());
     }
 
     private void mostrarPrestamo() {
-        String codLibro = JOptionPane.showInputDialog("Ingrese el código del libro a prestar:");
+        JFrame prestamoFrame = new JFrame("Prestamo de libros");
+        prestamoFrame.setSize(400, 200);
+        prestamoFrame.setLocationRelativeTo(null);
 
-        if (catalogo.containsKey(codLibro)) {
-            String nombreUsuario = JOptionPane.showInputDialog("Ingrese el nombre del usuario para el préstamo:");
-            prestamos.put(codLibro, nombreUsuario);
-            JOptionPane.showMessageDialog(null, "Libro prestado a " + nombreUsuario);
-        } else {
-            JOptionPane.showMessageDialog(null, "Código de libro no encontrado.");
-        }
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+
+        JLabel label = new JLabel("Ingrese código de libro:");
+        JTextField codField = new JTextField(15);
+
+        JButton prestarBtn = new JButton("Prestar libro");
+
+        panel.add(label);
+        panel.add(codField);
+        panel.add(prestarBtn);
+
+        prestamoFrame.add(panel);
+        prestamoFrame.setVisible(true);
+
+        prestarBtn.addActionListener(e -> {
+            String codigo = codField.getText();
+            if (catalogo.containsKey(codigo)) {
+                prestamos.put(codigo, "prestado");
+                JOptionPane.showMessageDialog(prestamoFrame, "Libro prestado exitosamente.");
+            } else {
+                JOptionPane.showMessageDialog(prestamoFrame, "Código de libro no encontrado.");
+            }
+            prestamoFrame.dispose();
+        });
     }
 
     private String generarCodigo(String tipo) {
