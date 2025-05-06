@@ -67,7 +67,7 @@ public class CatalogoConsulta extends JFrame {
             imagenLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
             contenedor.add(imagenLabel, BorderLayout.WEST);
         } catch (Exception e) {
-            System.out.println("⚠️ Imagen no encontrada: logo_udb.png");
+            System.out.println("⚠️ Imagen no encontrada: logo_udb.jpg");
         }
 
         contenedor.add(formPanel, BorderLayout.CENTER);
