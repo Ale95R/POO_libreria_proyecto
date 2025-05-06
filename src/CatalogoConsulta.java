@@ -61,7 +61,7 @@ public class CatalogoConsulta extends JFrame {
         JPanel contenedor = new JPanel(new BorderLayout());
 
         try {
-            ImageIcon iconoOriginal = new ImageIcon(getClass().getResource("logo_udb.png"));
+            ImageIcon iconoOriginal = new ImageIcon(getClass().getResource("logo_udb.jpg"));
             Image imagenEscalada = iconoOriginal.getImage().getScaledInstance(150, 150, Image.SCALE_SMOOTH);
             JLabel imagenLabel = new JLabel(new ImageIcon(imagenEscalada));
             imagenLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
