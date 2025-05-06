@@ -1,0 +1,320 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+
+public class CatalogoConsulta extends JFrame {
+
+    private static HashMap<String, String> adminCreds = new HashMap<>();
+    private static HashMap<String, String> profCreds = new HashMap<>();
+    private static HashMap<String, String> alumnoCreds = new HashMap<>();
+    private static HashMap<String, Material> catalogo = new HashMap<>();
+    private static Map<String, Integer> contadorPorTipo = new HashMap<>();
+    private static Map<String, String> prestamos = new HashMap<>();
+
+    public static void main(String[] args) {
+        adminCreds.put("admin", "123");
+        profCreds.put("prof", "123");
+        alumnoCreds.put("alumno", "123");
+        SwingUtilities.invokeLater(() -> new CatalogoConsulta().mostrarLogin());
+    }
+
+    public void mostrarLogin() {
+        JFrame loginFrame = new JFrame("Login de Usuarios");
+        loginFrame.setSize(600, 250);
+        loginFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        loginFrame.setLocationRelativeTo(null);
+
+        JPanel formPanel = new JPanel(new GridLayout(6, 2, 10, 10));  // Aumenté el número de filas
+        formPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        JLabel tipoLabel = new JLabel("Tipo de usuario:");
+        JComboBox<String> tipoCombo = new JComboBox<>(new String[]{"Administrador", "Profesor", "Alumno"});
+
+        JLabel userLabel = new JLabel("Usuario:");
+        JTextField userField = new JTextField();
+
+        JLabel passLabel = new JLabel("Contraseña:");
+        JPasswordField passField = new JPasswordField();
+
+        JButton loginBtn = new JButton("Iniciar sesión");
+
+        JLabel mensaje = new JLabel("");
+        mensaje.setForeground(Color.RED);
+
+        JButton olvidarContraseñaBtn = new JButton("¿Olvidaste la contraseña?");
+
+        formPanel.add(tipoLabel);
+        formPanel.add(tipoCombo);
+        formPanel.add(userLabel);
+        formPanel.add(userField);
+        formPanel.add(passLabel);
+        formPanel.add(passField);
+        formPanel.add(new JLabel());
+        formPanel.add(loginBtn);
+        formPanel.add(mensaje);
+
+        // Añadir la opción para recordar contraseña
+        formPanel.add(new JLabel());
+        formPanel.add(olvidarContraseñaBtn);
+
+        JPanel contenedor = new JPanel(new BorderLayout());
+
+        try {
+            ImageIcon iconoOriginal = new ImageIcon(getClass().getResource("logo_udb.png"));
+            Image imagenEscalada = iconoOriginal.getImage().getScaledInstance(150, 150, Image.SCALE_SMOOTH);
+            JLabel imagenLabel = new JLabel(new ImageIcon(imagenEscalada));
+            imagenLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+            contenedor.add(imagenLabel, BorderLayout.WEST);
+        } catch (Exception e) {
+            System.out.println("⚠️ Imagen no encontrada: logo_udb.png");
+        }
+
+        contenedor.add(formPanel, BorderLayout.CENTER);
+        loginFrame.add(contenedor);
+        loginFrame.setVisible(true);
+
+        loginBtn.addActionListener(e -> {
+            String tipo = (String) tipoCombo.getSelectedItem();
+            String user = userField.getText();
+            String pass = new String(passField.getPassword());
+
+            if (autenticar(tipo, user, pass)) {
+                loginFrame.dispose();
+                mostrarCatalogo(tipo);
+            } else {
+                mensaje.setText("Usuario o contraseña incorrectos.");
+            }
+        });
+
+        olvidarContraseñaBtn.addActionListener(e -> {
+            String user = userField.getText();
+            if (adminCreds.containsKey(user)) {
+                JOptionPane.showMessageDialog(null, "Tu contraseña es: " + adminCreds.get(user));
+            } else if (profCreds.containsKey(user)) {
+                JOptionPane.showMessageDialog(null, "Tu contraseña es: " + profCreds.get(user));
+            } else if (alumnoCreds.containsKey(user)) {
+                JOptionPane.showMessageDialog(null, "Tu contraseña es: " + alumnoCreds.get(user));
+            } else {
+                JOptionPane.showMessageDialog(null, "Usuario no encontrado.");
+            }
+        });
+    }
+
+    private boolean autenticar(String tipo, String user, String pass) {
+        switch (tipo) {
+            case "Administrador":
+                return adminCreds.containsKey(user) && adminCreds.get(user).equals(pass);
+            case "Profesor":
+                return profCreds.containsKey(user) && profCreds.get(user).equals(pass);
+            case "Alumno":
+                return alumnoCreds.containsKey(user) && alumnoCreds.get(user).equals(pass);
+            default:
+                return false;
+        }
+    }
+
+    public void mostrarCatalogo(String tipoUsuario) {
+        JFrame frame = new JFrame("Catálogo - " + tipoUsuario);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(600, 300);
+        frame.setLocationRelativeTo(null);
+
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+
+        JLabel tituloLabel = new JLabel("Consulta al catálogo");
+        tituloLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        tituloLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        panel.add(tituloLabel);
+
+        Dimension buttonSize = new Dimension(200, 30); // Tamaño uniforme para todos los botones
+
+        if (tipoUsuario.equals("Administrador")) {
+            JButton btnAgregar = new JButton("Ingresar nuevo ejemplar");
+            btnAgregar.setPreferredSize(buttonSize);
+            btnAgregar.setMaximumSize(buttonSize);
+            btnAgregar.setAlignmentX(Component.CENTER_ALIGNMENT);
+            btnAgregar.addActionListener(e -> mostrarFormulario("agregar"));
+            panel.add(btnAgregar);
+
+            JButton btnEditar = new JButton("Editar ejemplar");
+            btnEditar.setPreferredSize(buttonSize);
+            btnEditar.setMaximumSize(buttonSize);
+            btnEditar.setAlignmentX(Component.CENTER_ALIGNMENT);
+            btnEditar.addActionListener(e -> mostrarFormulario("editar"));
+            panel.add(btnEditar);
+
+            JButton btnBorrar = new JButton("Borrar ejemplar");
+            btnBorrar.setPreferredSize(buttonSize);
+            btnBorrar.setMaximumSize(buttonSize);
+            btnBorrar.setAlignmentX(Component.CENTER_ALIGNMENT);
+            btnBorrar.addActionListener(e -> mostrarFormulario("borrar"));
+            panel.add(btnBorrar);
+        }
+
+        if (tipoUsuario.equals("Profesor")) {
+            JButton btnPrestar = new JButton("Prestar libro");
+            btnPrestar.setPreferredSize(buttonSize);
+            btnPrestar.setMaximumSize(buttonSize);
+            btnPrestar.setAlignmentX(Component.CENTER_ALIGNMENT);
+            btnPrestar.addActionListener(e -> mostrarPrestamo());
+            panel.add(btnPrestar);
+        }
+
+        if (tipoUsuario.equals("Alumno")) {
+            JButton btnPrestar = new JButton("Prestar libro");
+            btnPrestar.setPreferredSize(buttonSize);
+            btnPrestar.setMaximumSize(buttonSize);
+            btnPrestar.setAlignmentX(Component.CENTER_ALIGNMENT);
+            btnPrestar.addActionListener(e -> mostrarPrestamo());
+            panel.add(btnPrestar);
+        }
+
+        JButton btnVer = new JButton("Ver ejemplares");
+        btnVer.setPreferredSize(buttonSize);
+        btnVer.setMaximumSize(buttonSize);
+        btnVer.setAlignmentX(Component.CENTER_ALIGNMENT);
+        btnVer.addActionListener(e -> mostrarCatalogoLista());
+        panel.add(btnVer);
+
+        JButton btnCerrarSesion = new JButton("Cerrar sesión");
+        btnCerrarSesion.setPreferredSize(buttonSize);
+        btnCerrarSesion.setMaximumSize(buttonSize);
+        btnCerrarSesion.setAlignmentX(Component.CENTER_ALIGNMENT);
+        btnCerrarSesion.setForeground(Color.RED);
+        btnCerrarSesion.addActionListener(e -> {
+            frame.dispose();
+            mostrarLogin();
+        });
+        panel.add(Box.createVerticalStrut(15));
+        panel.add(btnCerrarSesion);
+
+        frame.add(panel);
+        frame.setVisible(true);
+    }
+
+    private void mostrarFormulario(String accion) {
+        JFrame frame = new JFrame("Formulario - " + accion.toUpperCase());
+        frame.setSize(500, 300);
+        frame.setLocationRelativeTo(null);
+        JPanel panel = new JPanel(new GridLayout(6, 2, 10, 10));
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        JTextField codField = new JTextField();
+        JTextField tituloField = new JTextField();
+        JTextField autorField = new JTextField();
+        JComboBox<String> tipoCombo = new JComboBox<>(new String[]{"Libro", "Revista", "Obra", "CD", "Tesis"});
+        JComboBox<String> idiomaCombo = new JComboBox<>(new String[]{"Español", "Inglés"});
+
+        if (!accion.equals("agregar")) {
+            String cod = JOptionPane.showInputDialog("Ingrese el código de identificación interna:");
+            if (cod == null || !catalogo.containsKey(cod)) {
+                JOptionPane.showMessageDialog(null, "Código no encontrado.");
+                return;
+            }
+            Material mat = catalogo.get(cod);
+            codField.setText(cod);
+            tituloField.setText(mat.titulo);
+            autorField.setText(mat.autor);
+            tipoCombo.setSelectedItem(mat.tipo);
+            idiomaCombo.setSelectedItem(mat.idioma);
+        }
+
+        if (!accion.equals("borrar")) {
+            panel.add(new JLabel("Título:"));
+            panel.add(tituloField);
+            panel.add(new JLabel("Autor:"));
+            panel.add(autorField);
+            panel.add(new JLabel("Tipo:"));
+            panel.add(tipoCombo);
+            panel.add(new JLabel("Idioma:"));
+            panel.add(idiomaCombo);
+        }
+
+        JButton btn = new JButton(accion.equals("agregar") ? "Guardar" : (accion.equals("editar") ? "Actualizar" : "Borrar"));
+        btn.addActionListener(e -> {
+            String tipo = (String) tipoCombo.getSelectedItem();
+            String idioma = (String) idiomaCombo.getSelectedItem();
+            String titulo = tituloField.getText();
+            String autor = autorField.getText();
+
+            if (accion.equals("agregar")) {
+                String codigo = generarCodigo(tipo);
+                catalogo.put(codigo, new Material(codigo, titulo, autor, tipo, idioma));
+                JOptionPane.showMessageDialog(frame, "Ejemplar agregado. Código: " + codigo);
+            } else if (accion.equals("editar")) {
+                String cod = codField.getText();
+                catalogo.put(cod, new Material(cod, titulo, autor, tipo, idioma));
+                JOptionPane.showMessageDialog(frame, "Ejemplar actualizado.");
+            } else if (accion.equals("borrar")) {
+                String cod = codField.getText();
+                catalogo.remove(cod);
+                JOptionPane.showMessageDialog(frame, "Ejemplar eliminado.");
+            }
+            frame.dispose();
+        });
+
+        if (!accion.equals("borrar")) panel.add(btn);
+        else {
+            panel.removeAll();
+            panel.setLayout(new FlowLayout());
+            panel.add(btn);
+        }
+
+        frame.add(panel);
+        frame.setVisible(true);
+    }
+
+    private void mostrarCatalogoLista() {
+        StringBuilder sb = new StringBuilder("Listado de ejemplares:\n");
+        for (Material m : catalogo.values()) {
+            sb.append(m.codigo).append(" - ").append(m.titulo).append(" (").append(m.tipo).append(")\n");
+        }
+
+        // Mostrar libros prestados si es un profesor
+        if (prestamos.size() > 0) {
+            sb.append("\nLibros prestados:\n");
+            for (Map.Entry<String, String> entry : prestamos.entrySet()) {
+                sb.append(entry.getKey()).append(" - Prestado a: ").append(entry.getValue()).append("\n");
+            }
+        }
+
+        JTextArea textArea = new JTextArea(sb.toString(), 15, 40);
+        textArea.setEditable(false);
+        JOptionPane.showMessageDialog(null, new JScrollPane(textArea), "Ejemplares", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void mostrarPrestamo() {
+        String codLibro = JOptionPane.showInputDialog("Ingrese el código del libro a prestar:");
+
+        if (catalogo.containsKey(codLibro)) {
+            String nombreUsuario = JOptionPane.showInputDialog("Ingrese el nombre del usuario para el préstamo:");
+            prestamos.put(codLibro, nombreUsuario);
+            JOptionPane.showMessageDialog(null, "Libro prestado a " + nombreUsuario);
+        } else {
+            JOptionPane.showMessageDialog(null, "Código de libro no encontrado.");
+        }
+    }
+
+    private String generarCodigo(String tipo) {
+        if (!contadorPorTipo.containsKey(tipo)) {
+            contadorPorTipo.put(tipo, 1);
+        } else {
+            contadorPorTipo.put(tipo, contadorPorTipo.get(tipo) + 1);
+        }
+        return tipo.substring(0, 3).toUpperCase() + contadorPorTipo.get(tipo);
+    }
+
+    static class Material {
+        String codigo, titulo, autor, tipo, idioma;
+
+        Material(String codigo, String titulo, String autor, String tipo, String idioma) {
+            this.codigo = codigo;
+            this.titulo = titulo;
+            this.autor = autor;
+            this.tipo = tipo;
+            this.idioma = idioma;
+        }
+    }
+}
