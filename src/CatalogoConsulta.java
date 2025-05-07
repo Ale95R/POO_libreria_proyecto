@@ -1,4 +1,5 @@
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel; // Agregar esta importación
 import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
@@ -15,7 +16,9 @@ public class CatalogoConsulta extends JFrame {
     public static void main(String[] args) {
         adminCreds.put("admin", "123");
         profCreds.put("prof", "123");
-        alumnoCreds.put("alumno", "123");
+        alumnoCreds.put("alumno1", "123");
+        alumnoCreds.put("alumno2", "123");
+        alumnoCreds.put("alumno3", "123");
         SwingUtilities.invokeLater(() -> new CatalogoConsulta().mostrarLogin());
     }
 
@@ -25,7 +28,7 @@ public class CatalogoConsulta extends JFrame {
         loginFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         loginFrame.setLocationRelativeTo(null);
 
-        JPanel formPanel = new JPanel(new GridLayout(6, 2, 10, 10));  // Aumenté el número de filas
+        JPanel formPanel = new JPanel(new GridLayout(6, 2, 10, 10));
         formPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         JLabel tipoLabel = new JLabel("Tipo de usuario:");
@@ -54,20 +57,19 @@ public class CatalogoConsulta extends JFrame {
         formPanel.add(loginBtn);
         formPanel.add(mensaje);
 
-        // Añadir la opción para recordar contraseña
         formPanel.add(new JLabel());
         formPanel.add(olvidarContraseñaBtn);
 
         JPanel contenedor = new JPanel(new BorderLayout());
 
         try {
-            ImageIcon iconoOriginal = new ImageIcon(getClass().getResource("logo_udb.jpg"));
+            ImageIcon iconoOriginal = new ImageIcon(getClass().getResource("logo_udb.png"));
             Image imagenEscalada = iconoOriginal.getImage().getScaledInstance(150, 150, Image.SCALE_SMOOTH);
             JLabel imagenLabel = new JLabel(new ImageIcon(imagenEscalada));
             imagenLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
             contenedor.add(imagenLabel, BorderLayout.WEST);
         } catch (Exception e) {
-            System.out.println("⚠️ Imagen no encontrada: logo_udb.jpg");
+            System.out.println("⚠️ Imagen no encontrada: logo_udb.png");
         }
 
         contenedor.add(formPanel, BorderLayout.CENTER);
@@ -148,7 +150,7 @@ public class CatalogoConsulta extends JFrame {
         tituloLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         panel.add(tituloLabel);
 
-        Dimension buttonSize = new Dimension(200, 30); // Tamaño uniforme para todos los botones
+        Dimension buttonSize = new Dimension(200, 30);
 
         if (tipoUsuario.equals("Administrador")) {
             JButton btnAgregar = new JButton("Ingresar nuevo ejemplar");
@@ -173,16 +175,7 @@ public class CatalogoConsulta extends JFrame {
             panel.add(btnBorrar);
         }
 
-        if (tipoUsuario.equals("Profesor")) {
-            JButton btnPrestar = new JButton("Prestar libro");
-            btnPrestar.setPreferredSize(buttonSize);
-            btnPrestar.setMaximumSize(buttonSize);
-            btnPrestar.setAlignmentX(Component.CENTER_ALIGNMENT);
-            btnPrestar.addActionListener(e -> mostrarPrestamo());
-            panel.add(btnPrestar);
-        }
-
-        if (tipoUsuario.equals("Alumno")) {
+        if (tipoUsuario.equals("Profesor") || tipoUsuario.equals("Alumno")) {
             JButton btnPrestar = new JButton("Prestar libro");
             btnPrestar.setPreferredSize(buttonSize);
             btnPrestar.setMaximumSize(buttonSize);
@@ -224,6 +217,7 @@ public class CatalogoConsulta extends JFrame {
         JTextField codField = new JTextField();
         JTextField tituloField = new JTextField();
         JTextField autorField = new JTextField();
+        JTextField cantidadField = new JTextField();
         JComboBox<String> tipoCombo = new JComboBox<>(new String[]{"Libro", "Revista", "Obra", "CD", "Tesis"});
         JComboBox<String> idiomaCombo = new JComboBox<>(new String[]{"Español", "Inglés"});
 
@@ -241,16 +235,16 @@ public class CatalogoConsulta extends JFrame {
             idiomaCombo.setSelectedItem(mat.idioma);
         }
 
-        if (!accion.equals("borrar")) {
-            panel.add(new JLabel("Título:"));
-            panel.add(tituloField);
-            panel.add(new JLabel("Autor:"));
-            panel.add(autorField);
-            panel.add(new JLabel("Tipo:"));
-            panel.add(tipoCombo);
-            panel.add(new JLabel("Idioma:"));
-            panel.add(idiomaCombo);
-        }
+        panel.add(new JLabel("Título:"));
+        panel.add(tituloField);
+        panel.add(new JLabel("Autor:"));
+        panel.add(autorField);
+        panel.add(new JLabel("Cantidad:"));
+        panel.add(cantidadField);
+        panel.add(new JLabel("Tipo:"));
+        panel.add(tipoCombo);
+        panel.add(new JLabel("Idioma:"));
+        panel.add(idiomaCombo);
 
         JButton btn = new JButton(accion.equals("agregar") ? "Guardar" : (accion.equals("editar") ? "Actualizar" : "Borrar"));
         btn.addActionListener(e -> {
@@ -258,11 +252,23 @@ public class CatalogoConsulta extends JFrame {
             String idioma = (String) idiomaCombo.getSelectedItem();
             String titulo = tituloField.getText();
             String autor = autorField.getText();
+            String cantidadText = cantidadField.getText();
+            int cantidad = 1;
+
+            try {
+                if (!cantidadText.isEmpty()) {
+                    cantidad = Integer.parseInt(cantidadText);
+                }
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(frame, "Cantidad inválida. Se agregará 1 unidad por defecto.");
+            }
 
             if (accion.equals("agregar")) {
-                String codigo = generarCodigo(tipo);
-                catalogo.put(codigo, new Material(codigo, titulo, autor, tipo, idioma));
-                JOptionPane.showMessageDialog(frame, "Ejemplar agregado. Código: " + codigo);
+                for (int i = 0; i < cantidad; i++) {
+                    String codigo = generarCodigo(tipo);
+                    catalogo.put(codigo, new Material(codigo, titulo, autor, tipo, idioma));
+                }
+                JOptionPane.showMessageDialog(frame, "Se agregaron " + cantidad + " unidades.");
             } else if (accion.equals("editar")) {
                 String cod = codField.getText();
                 catalogo.put(cod, new Material(cod, titulo, autor, tipo, idioma));
@@ -275,23 +281,27 @@ public class CatalogoConsulta extends JFrame {
             frame.dispose();
         });
 
-        if (!accion.equals("borrar")) panel.add(btn);
-        else {
-            panel.removeAll();
-            panel.setLayout(new FlowLayout());
-            panel.add(btn);
-        }
+        panel.add(btn);
 
         frame.add(panel);
         frame.setVisible(true);
     }
 
     private void mostrarCatalogoLista() {
-        StringBuilder sb = new StringBuilder("Listado de ejemplares:\n");
+        String[] columnas = {"Código", "Título", "Autor", "Tipo", "Idioma"};
+        DefaultTableModel model = new DefaultTableModel(columnas, 0);
+
         for (Material m : catalogo.values()) {
-            sb.append(m.codigo).append(" - ").append(m.titulo).append(" - ").append(m.autor).append(" - ").append(m.tipo).append("\n");
+            model.addRow(new Object[]{m.codigo, m.titulo, m.autor, m.tipo, m.idioma});
         }
-        JOptionPane.showMessageDialog(null, sb.toString());
+
+        JTable tabla = new JTable(model);
+        JScrollPane scrollPane = new JScrollPane(tabla);
+        JFrame tablaFrame = new JFrame("Listado de Ejemplares");
+        tablaFrame.setSize(600, 400);
+        tablaFrame.setLocationRelativeTo(null);
+        tablaFrame.add(scrollPane);
+        tablaFrame.setVisible(true);
     }
 
     private void mostrarPrestamo() {
@@ -302,41 +312,41 @@ public class CatalogoConsulta extends JFrame {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 
-        JLabel label = new JLabel("Ingrese código de libro:");
-        JTextField codField = new JTextField(15);
+        JLabel label = new JLabel("Ingrese el código de identificación interna del libro:");
+        JTextField codigoField = new JTextField(15);
 
-        JButton prestarBtn = new JButton("Prestar libro");
+        JButton prestarBtn = new JButton("Prestar");
 
         panel.add(label);
-        panel.add(codField);
+        panel.add(codigoField);
         panel.add(prestarBtn);
 
         prestamoFrame.add(panel);
         prestamoFrame.setVisible(true);
 
         prestarBtn.addActionListener(e -> {
-            String codigo = codField.getText();
-            if (catalogo.containsKey(codigo)) {
+            String codigo = codigoField.getText();
+            if (catalogo.containsKey(codigo) && !prestamos.containsKey(codigo)) {
                 prestamos.put(codigo, "prestado");
-                JOptionPane.showMessageDialog(prestamoFrame, "Libro prestado exitosamente.");
+                JOptionPane.showMessageDialog(prestamoFrame, "El libro ha sido prestado.");
             } else {
-                JOptionPane.showMessageDialog(prestamoFrame, "Código de libro no encontrado.");
+                JOptionPane.showMessageDialog(prestamoFrame, "Código no válido.");
             }
-            prestamoFrame.dispose();
         });
     }
 
     private String generarCodigo(String tipo) {
-        if (!contadorPorTipo.containsKey(tipo)) {
-            contadorPorTipo.put(tipo, 1);
-        } else {
-            contadorPorTipo.put(tipo, contadorPorTipo.get(tipo) + 1);
-        }
-        return tipo.substring(0, 3).toUpperCase() + contadorPorTipo.get(tipo);
+        contadorPorTipo.putIfAbsent(tipo, 0);
+        contadorPorTipo.put(tipo, contadorPorTipo.get(tipo) + 1);
+        return tipo.substring(0, 1).toUpperCase() + contadorPorTipo.get(tipo);
     }
 
     static class Material {
-        String codigo, titulo, autor, tipo, idioma;
+        String codigo;
+        String titulo;
+        String autor;
+        String tipo;
+        String idioma;
 
         Material(String codigo, String titulo, String autor, String tipo, String idioma) {
             this.codigo = codigo;
