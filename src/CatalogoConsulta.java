@@ -12,6 +12,7 @@ public class CatalogoConsulta extends JFrame {
     private static HashMap<String, Material> catalogo = new HashMap<>();
     private static Map<String, Integer> contadorPorTipo = new HashMap<>();
     private static Map<String, String> prestamos = new HashMap<>();
+    private static Map<String, Boolean> usuariosConMora = new HashMap<>();
 
     public static void main(String[] args) {
         adminCreds.put("admin", "123");
@@ -19,6 +20,10 @@ public class CatalogoConsulta extends JFrame {
         alumnoCreds.put("alumno1", "123");
         alumnoCreds.put("alumno2", "123");
         alumnoCreds.put("alumno3", "123");
+        usuariosConMora.put("alumno1", false);
+        usuariosConMora.put("alumno2", false);
+        usuariosConMora.put("alumno3", true); // Simulamos que este usuario tiene mora
+        usuariosConMora.put("prof", false);   // También puede aplicar a profesores
         SwingUtilities.invokeLater(() -> new CatalogoConsulta().mostrarLogin());
     }
 
@@ -305,18 +310,23 @@ public class CatalogoConsulta extends JFrame {
     }
 
     private void mostrarPrestamo() {
-        JFrame prestamoFrame = new JFrame("Prestamo de libros");
-        prestamoFrame.setSize(400, 200);
+        JFrame prestamoFrame = new JFrame("Préstamo de libros");
+        prestamoFrame.setSize(400, 250);
         prestamoFrame.setLocationRelativeTo(null);
 
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 
-        JLabel label = new JLabel("Ingrese el código de identificación interna del libro:");
+        JLabel userLabel = new JLabel("Ingresa tu nombre de usuario:");
+        JTextField userField = new JTextField(15);
+
+        JLabel label = new JLabel("Ingresa el código de identificación interna del libro:");
         JTextField codigoField = new JTextField(15);
 
         JButton prestarBtn = new JButton("Prestar");
 
+        panel.add(userLabel);
+        panel.add(userField);
         panel.add(label);
         panel.add(codigoField);
         panel.add(prestarBtn);
@@ -325,12 +335,27 @@ public class CatalogoConsulta extends JFrame {
         prestamoFrame.setVisible(true);
 
         prestarBtn.addActionListener(e -> {
-            String codigo = codigoField.getText();
+            String usuario = userField.getText().trim();
+            String codigo = codigoField.getText().trim();
+
+            boolean registrado = alumnoCreds.containsKey(usuario) || profCreds.containsKey(usuario);
+            boolean tieneMora = usuariosConMora.getOrDefault(usuario, false);
+
+            if (!registrado) {
+                JOptionPane.showMessageDialog(prestamoFrame, "Usuario no registrado.");
+                return;
+            }
+
+            if (tieneMora) {
+                JOptionPane.showMessageDialog(prestamoFrame, "No puedes realizar préstamos debido a una mora.");
+                return;
+            }
+
             if (catalogo.containsKey(codigo) && !prestamos.containsKey(codigo)) {
                 prestamos.put(codigo, "prestado");
                 JOptionPane.showMessageDialog(prestamoFrame, "El libro ha sido prestado.");
             } else {
-                JOptionPane.showMessageDialog(prestamoFrame, "Código no válido.");
+                JOptionPane.showMessageDialog(prestamoFrame, "Código no válido o libro ya prestado.");
             }
         });
     }
