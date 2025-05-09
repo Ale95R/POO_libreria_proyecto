@@ -3,7 +3,6 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
 
-/** Lista los libros que un usuario tiene prestados (y permite devolver desde la tabla). */
 public class MostrarDevolucion extends JFrame {
 
     public MostrarDevolucion(String usuario) {
@@ -13,7 +12,7 @@ public class MostrarDevolucion extends JFrame {
 
         String[] col = {"Código","Título","Acción"};
         DefaultTableModel m = new DefaultTableModel(col,0){
-            /* la última columna mostrará botones */
+
             @Override public boolean isCellEditable(int r,int c){ return c==2; }
         };
 
@@ -28,18 +27,17 @@ public class MostrarDevolucion extends JFrame {
         JTable t = new JTable(m);
         add(new JScrollPane(t), BorderLayout.CENTER);
 
-        /* renderer/editor para botón */
         t.getColumnModel().getColumn(2).setCellRenderer(new ButtonRenderer());
         t.getColumnModel().getColumn(2).setCellEditor(new ButtonEditor((codigo)->{
-            // callback al pulsar el botón
-            new DevolverLibro(usuario);  // abre la ventana de devolución
-            dispose();                   // cerramos lista para refrescar después
+
+            new DevolverLibro(usuario);
+            dispose();
         }));
 
         setVisible(true);
     }
 
-    /* ─────────── helpers para botón en JTable ─────────── */
+
     static class ButtonRenderer extends JButton implements javax.swing.table.TableCellRenderer{
         public ButtonRenderer(){ setOpaque(true); }
         public Component getTableCellRendererComponent(JTable t,Object v,boolean s,boolean f,int r,int c){

@@ -4,21 +4,14 @@ import java.awt.*;
 import java.util.*;
 import java.util.List;
 
-/**
- * Ventana principal: login → menú según rol (Admin | Profesor | Alumno).
- * Admin puede crear / editar / borrar ejemplares.
- * Profesor / Alumno pueden prestar y devolver.
- */
+
 public class CatalogoConsulta extends JFrame {
 
-    /* ─────────────────── “base de datos” en memoria ─────────────────── */
 
-    // credenciales
     public static final Map<String, String> adminCreds  = new HashMap<>();
     public static final Map<String, String> profCreds   = new HashMap<>();
     public static final Map<String, String> alumnoCreds = new HashMap<>();
 
-    // catálogo y préstamos
     public static final Map<String, Material>            catalogo           = new HashMap<>();
     public static final Map<String, Integer>             contadorPorTipo    = new HashMap<>();
     public static final Map<String, List<String>>        prestamosPorUser   = new HashMap<>();
@@ -27,28 +20,21 @@ public class CatalogoConsulta extends JFrame {
 
     public static final int LIMITE_PRESTAMOS = 3;
 
-    /* ─────────────────── sesión actual ─────────────────── */
     private String usuarioActual;
     private String tipoActual;          // Administrador | Profesor | Alumno
 
-    /* ─────────────────── programa ─────────────────── */
+
     public static void main(String[] args) {
-        /* demo de usuarios */
+
         adminCreds.put("admin",  "123");
         profCreds.put("prof",    "123");
         alumnoCreds.put("alumno1","123");
         alumnoCreds.put("alumno2","123");
         alumnoCreds.put("alumno3","123");
-
-        /* simulamos una mora para probar restricciones */
         usuariosConMora.put("alumno3", true);
 
         SwingUtilities.invokeLater(() -> new CatalogoConsulta().mostrarLogin());
     }
-
-    /* ═══════════════════════════════════════════════════════════════════
-                                   LOGIN
-       ═══════════════════════════════════════════════════════════════════ */
 
     public void mostrarLogin() {
         JFrame login = new JFrame("Login");
@@ -102,10 +88,6 @@ public class CatalogoConsulta extends JFrame {
         }
     }
 
-    /* ═══════════════════════════════════════════════════════════════════
-                               MENÚ PRINCIPAL
-       ═══════════════════════════════════════════════════════════════════ */
-
     private void mostrarMenuPrincipal() {
         JFrame menu = new JFrame("Catálogo – "+tipoActual+" ("+usuarioActual+")");
         menu.setSize(650, 320);
@@ -124,7 +106,7 @@ public class CatalogoConsulta extends JFrame {
 
         Dimension btnSize = new Dimension(220, 32);
 
-        /* botones para ADMIN */
+
         if ("Administrador".equals(tipoActual)) {
             addButton(p,"Ingresar nuevo ejemplar", btnSize,
                     e -> mostrarFormulario("agregar"));
@@ -134,7 +116,6 @@ public class CatalogoConsulta extends JFrame {
                     e -> mostrarFormulario("borrar"));
         }
 
-        /* botones para PROFESOR / ALUMNO */
         if (!"Administrador".equals(tipoActual)) {
             addButton(p,"Prestar libro",  btnSize, e -> mostrarPrestamo());
             addButton(p,"Devolver libro", btnSize,
@@ -143,7 +124,6 @@ public class CatalogoConsulta extends JFrame {
                     e -> new MostrarDevolucion(usuarioActual).setVisible(true));
         }
 
-        /* comunes */
         addButton(p,"Ver ejemplares", btnSize, e -> mostrarCatalogoTabla());
 
         JButton salir = new JButton("Cerrar sesión");
@@ -167,10 +147,6 @@ public class CatalogoConsulta extends JFrame {
         b.addActionListener(al);
         panel.add(b);
     }
-
-    /* ═══════════════════════════════════════════════════════════════════
-                             CRUD Ejemplares (ADMIN)
-       ═══════════════════════════════════════════════════════════════════ */
 
     private void mostrarFormulario(String accion) {
         JFrame f = new JFrame(accion.toUpperCase()+" ejemplar");
@@ -243,10 +219,6 @@ public class CatalogoConsulta extends JFrame {
         f.setVisible(true);
     }
 
-    /* ═══════════════════════════════════════════════════════════════════
-                                  LISTADO
-       ═══════════════════════════════════════════════════════════════════ */
-
     private void mostrarCatalogoTabla() {
         String[] col = {"Código","Título","Autor","Tipo","Idioma"};
         DefaultTableModel m = new DefaultTableModel(col,0);
@@ -260,10 +232,6 @@ public class CatalogoConsulta extends JFrame {
         t.add(new JScrollPane(tabla));
         t.setVisible(true);
     }
-
-    /* ═══════════════════════════════════════════════════════════════════
-                                   PRÉSTAMO
-       ═══════════════════════════════════════════════════════════════════ */
 
     private void mostrarPrestamo() {
         JFrame pr = new JFrame("Prestar libro");
@@ -298,10 +266,6 @@ public class CatalogoConsulta extends JFrame {
         });
     }
 
-    /* ═══════════════════════════════════════════════════════════════════
-                              utilidades
-       ═══════════════════════════════════════════════════════════════════ */
-
     private void msg(Component c, String s){ JOptionPane.showMessageDialog(c,s); }
 
     private String generarCodigo(String tipo){
@@ -309,7 +273,6 @@ public class CatalogoConsulta extends JFrame {
         return tipo.substring(0,1).toUpperCase()+contadorPorTipo.get(tipo);
     }
 
-    /* ─────────── modelo sencillo ─────────── */
     public static class Material {
         public final String codigo,titulo,autor,tipo,idioma;
         public Material(String c,String t,String a,String ti,String id){

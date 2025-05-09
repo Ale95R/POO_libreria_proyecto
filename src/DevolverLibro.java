@@ -2,7 +2,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.List;
 
-/** Ventana para devolver un libro específico. */
+
 public class DevolverLibro extends JFrame {
 
     public DevolverLibro(String usuario) {
@@ -29,7 +29,7 @@ public class DevolverLibro extends JFrame {
                 JOptionPane.showMessageDialog(this,"No tienes ese libro.");
                 return;
             }
-            /* devuelve */
+
             lista.remove(codigo);
             CatalogoConsulta.prestamos.remove(codigo);
 
