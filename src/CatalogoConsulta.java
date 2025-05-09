@@ -1,405 +1,319 @@
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel; // Agregar esta importación
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.*;
 import java.util.*;
 import java.util.List;
 
+/**
+ * Ventana principal: login → menú según rol (Admin | Profesor | Alumno).
+ * Admin puede crear / editar / borrar ejemplares.
+ * Profesor / Alumno pueden prestar y devolver.
+ */
 public class CatalogoConsulta extends JFrame {
 
-    private static HashMap<String, String> adminCreds = new HashMap<>();
-    private static HashMap<String, String> profCreds = new HashMap<>();
-    private static HashMap<String, String> alumnoCreds = new HashMap<>();
-    private static HashMap<String, Material> catalogo = new HashMap<>();
-    private static Map<String, Integer> contadorPorTipo = new HashMap<>();
-    private static final int LIMITE_PRESTAMOS = 3;
-    private static Map<String, List<String>> prestamosPorUsuario = new HashMap<>();
-    private static Map<String, String> prestamos = new HashMap<>();
-    private static Map<String, Boolean> usuariosConMora = new HashMap<>();
+    /* ─────────────────── “base de datos” en memoria ─────────────────── */
 
+    // credenciales
+    public static final Map<String, String> adminCreds  = new HashMap<>();
+    public static final Map<String, String> profCreds   = new HashMap<>();
+    public static final Map<String, String> alumnoCreds = new HashMap<>();
+
+    // catálogo y préstamos
+    public static final Map<String, Material>            catalogo           = new HashMap<>();
+    public static final Map<String, Integer>             contadorPorTipo    = new HashMap<>();
+    public static final Map<String, List<String>>        prestamosPorUser   = new HashMap<>();
+    public static final Map<String, String>              prestamos          = new HashMap<>();
+    public static final Map<String, Boolean>             usuariosConMora    = new HashMap<>();
+
+    public static final int LIMITE_PRESTAMOS = 3;
+
+    /* ─────────────────── sesión actual ─────────────────── */
+    private String usuarioActual;
+    private String tipoActual;          // Administrador | Profesor | Alumno
+
+    /* ─────────────────── programa ─────────────────── */
     public static void main(String[] args) {
-        adminCreds.put("admin", "123");
-        profCreds.put("prof", "123");
-        alumnoCreds.put("alumno1", "123");
-        alumnoCreds.put("alumno2", "123");
-        alumnoCreds.put("alumno3", "123");
-        usuariosConMora.put("alumno1", false);
-        usuariosConMora.put("alumno2", false);
-        usuariosConMora.put("alumno3", true); // Simulamos que este usuario tiene mora
-        usuariosConMora.put("prof", false);   // También puede aplicar a profesores
+        /* demo de usuarios */
+        adminCreds.put("admin",  "123");
+        profCreds.put("prof",    "123");
+        alumnoCreds.put("alumno1","123");
+        alumnoCreds.put("alumno2","123");
+        alumnoCreds.put("alumno3","123");
+
+        /* simulamos una mora para probar restricciones */
+        usuariosConMora.put("alumno3", true);
+
         SwingUtilities.invokeLater(() -> new CatalogoConsulta().mostrarLogin());
     }
 
+    /* ═══════════════════════════════════════════════════════════════════
+                                   LOGIN
+       ═══════════════════════════════════════════════════════════════════ */
+
     public void mostrarLogin() {
-        JFrame loginFrame = new JFrame("Login de Usuarios");
-        loginFrame.setSize(600, 250);
-        loginFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        loginFrame.setLocationRelativeTo(null);
+        JFrame login = new JFrame("Login");
+        login.setSize(600, 260);
+        login.setDefaultCloseOperation(EXIT_ON_CLOSE);
+        login.setLocationRelativeTo(null);
 
-        JPanel formPanel = new JPanel(new GridLayout(6, 2, 10, 10));
-        formPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        JPanel form = new JPanel(new GridLayout(6, 2, 8, 8));
+        form.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        JLabel tipoLabel = new JLabel("Tipo de usuario:");
-        JComboBox<String> tipoCombo = new JComboBox<>(new String[]{"Administrador", "Profesor", "Alumno"});
+        JComboBox<String> tipoCB = new JComboBox<>(new String[]{"Administrador","Profesor","Alumno"});
+        JTextField        userTF = new JTextField();
+        JPasswordField    passTF = new JPasswordField();
+        JLabel            msg    = new JLabel(" ");
+        msg.setForeground(Color.RED);
 
-        JLabel userLabel = new JLabel("Usuario:");
-        JTextField userField = new JTextField();
-
-        JLabel passLabel = new JLabel("Contraseña:");
-        JPasswordField passField = new JPasswordField();
-
+        form.add(new JLabel("Tipo de usuario:")); form.add(tipoCB);
+        form.add(new JLabel("Usuario:"));         form.add(userTF);
+        form.add(new JLabel("Contraseña:"));      form.add(passTF);
+        form.add(new JLabel());                   // hueco
         JButton loginBtn = new JButton("Iniciar sesión");
+        form.add(loginBtn);
+        form.add(msg);
 
-        JLabel mensaje = new JLabel("");
-        mensaje.setForeground(Color.RED);
+        login.add(form);
+        login.setVisible(true);
 
-        JButton olvidarContraseñaBtn = new JButton("¿Olvidaste la contraseña?");
-
-        formPanel.add(tipoLabel);
-        formPanel.add(tipoCombo);
-        formPanel.add(userLabel);
-        formPanel.add(userField);
-        formPanel.add(passLabel);
-        formPanel.add(passField);
-        formPanel.add(new JLabel());
-        formPanel.add(loginBtn);
-        formPanel.add(mensaje);
-
-        formPanel.add(new JLabel());
-        formPanel.add(olvidarContraseñaBtn);
-
-        JPanel contenedor = new JPanel(new BorderLayout());
-
-        try {
-            ImageIcon iconoOriginal = new ImageIcon(getClass().getResource("logo_udb.png"));
-            Image imagenEscalada = iconoOriginal.getImage().getScaledInstance(150, 150, Image.SCALE_SMOOTH);
-            JLabel imagenLabel = new JLabel(new ImageIcon(imagenEscalada));
-            imagenLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-            contenedor.add(imagenLabel, BorderLayout.WEST);
-        } catch (Exception e) {
-            System.out.println("⚠️ Imagen no encontrada: logo_udb.png");
-        }
-
-        contenedor.add(formPanel, BorderLayout.CENTER);
-        loginFrame.add(contenedor);
-        loginFrame.setVisible(true);
-
+        /* ───── listener ───── */
         loginBtn.addActionListener(e -> {
-            String tipo = (String) tipoCombo.getSelectedItem();
-            String user = userField.getText();
-            String pass = new String(passField.getPassword());
+            String tipo = (String) tipoCB.getSelectedItem();
+            String usr  = userTF.getText().trim();
+            String pass = new String(passTF.getPassword());
 
-            if (autenticar(tipo, user, pass)) {
-                loginFrame.dispose();
-                mostrarCatalogo(tipo);
+            if (autenticar(tipo, usr, pass)) {
+                usuarioActual = usr;
+                tipoActual    = tipo;
+                login.dispose();
+                mostrarMenuPrincipal();
             } else {
-                mensaje.setText("Usuario o contraseña incorrectos.");
+                msg.setText("Credenciales incorrectas.");
             }
         });
-
-        olvidarContraseñaBtn.addActionListener(e -> mostrarOlvidoContraseña());
     }
 
     private boolean autenticar(String tipo, String user, String pass) {
         switch (tipo) {
-            case "Administrador":
-                return adminCreds.containsKey(user) && adminCreds.get(user).equals(pass);
-            case "Profesor":
-                return profCreds.containsKey(user) && profCreds.get(user).equals(pass);
-            case "Alumno":
-                return alumnoCreds.containsKey(user) && alumnoCreds.get(user).equals(pass);
-            default:
-                return false;
+            case "Administrador": return adminCreds.getOrDefault(user,"").equals(pass);
+            case "Profesor":      return profCreds .getOrDefault(user,"").equals(pass);
+            case "Alumno":        return alumnoCreds.getOrDefault(user,"").equals(pass);
+            default:              return false;
         }
     }
 
-    private void mostrarOlvidoContraseña() {
-        JFrame olvidoFrame = new JFrame("Olvidaste la contraseña");
-        olvidoFrame.setSize(400, 200);
-        olvidoFrame.setLocationRelativeTo(null);
+    /* ═══════════════════════════════════════════════════════════════════
+                               MENÚ PRINCIPAL
+       ═══════════════════════════════════════════════════════════════════ */
 
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+    private void mostrarMenuPrincipal() {
+        JFrame menu = new JFrame("Catálogo – "+tipoActual+" ("+usuarioActual+")");
+        menu.setSize(650, 320);
+        menu.setLocationRelativeTo(null);
+        menu.setDefaultCloseOperation(EXIT_ON_CLOSE);
 
-        JLabel label = new JLabel("Ingresa tu nombre de usuario:");
-        JTextField userField = new JTextField(15);
+        JPanel p = new JPanel();
+        p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
+        menu.add(p);
 
-        JButton solicitarBtn = new JButton("Solicitar contraseña");
+        JLabel t = new JLabel("Consulta al catálogo");
+        t.setAlignmentX(CENTER_ALIGNMENT);
+        t.setFont(t.getFont().deriveFont(Font.BOLD, 18f));
+        p.add(t);
+        p.add(Box.createVerticalStrut(10));
 
-        panel.add(label);
-        panel.add(userField);
-        panel.add(solicitarBtn);
+        Dimension btnSize = new Dimension(220, 32);
 
-        olvidoFrame.add(panel);
-        olvidoFrame.setVisible(true);
-
-        solicitarBtn.addActionListener(e -> {
-            String usuario = userField.getText();
-            if (adminCreds.containsKey(usuario) || profCreds.containsKey(usuario) || alumnoCreds.containsKey(usuario)) {
-                JOptionPane.showMessageDialog(olvidoFrame, "Tu contraseña será enviada a tu correo universitario en 24 horas por el departamento de administración.");
-            } else {
-                JOptionPane.showMessageDialog(olvidoFrame, "Usuario no encontrado.");
-            }
-            olvidoFrame.dispose();
-        });
-    }
-
-    public void mostrarCatalogo(String tipoUsuario) {
-        JFrame frame = new JFrame("Catálogo - " + tipoUsuario);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(600, 300);
-        frame.setLocationRelativeTo(null);
-
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-
-        JLabel tituloLabel = new JLabel("Consulta al catálogo");
-        tituloLabel.setFont(new Font("Arial", Font.BOLD, 16));
-        tituloLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        panel.add(tituloLabel);
-
-        Dimension buttonSize = new Dimension(200, 30);
-
-        if (tipoUsuario.equals("Administrador")) {
-            JButton btnAgregar = new JButton("Ingresar nuevo ejemplar");
-            btnAgregar.setPreferredSize(buttonSize);
-            btnAgregar.setMaximumSize(buttonSize);
-            btnAgregar.setAlignmentX(Component.CENTER_ALIGNMENT);
-            btnAgregar.addActionListener(e -> mostrarFormulario("agregar"));
-            panel.add(btnAgregar);
-
-            JButton btnEditar = new JButton("Editar ejemplar");
-            btnEditar.setPreferredSize(buttonSize);
-            btnEditar.setMaximumSize(buttonSize);
-            btnEditar.setAlignmentX(Component.CENTER_ALIGNMENT);
-            btnEditar.addActionListener(e -> mostrarFormulario("editar"));
-            panel.add(btnEditar);
-
-            JButton btnBorrar = new JButton("Borrar ejemplar");
-            btnBorrar.setPreferredSize(buttonSize);
-            btnBorrar.setMaximumSize(buttonSize);
-            btnBorrar.setAlignmentX(Component.CENTER_ALIGNMENT);
-            btnBorrar.addActionListener(e -> mostrarFormulario("borrar"));
-            panel.add(btnBorrar);
+        /* botones para ADMIN */
+        if ("Administrador".equals(tipoActual)) {
+            addButton(p,"Ingresar nuevo ejemplar", btnSize,
+                    e -> mostrarFormulario("agregar"));
+            addButton(p,"Editar ejemplar",          btnSize,
+                    e -> mostrarFormulario("editar"));
+            addButton(p,"Borrar ejemplar",          btnSize,
+                    e -> mostrarFormulario("borrar"));
         }
 
-        if (tipoUsuario.equals("Profesor") || tipoUsuario.equals("Alumno")) {
-            JButton btnPrestar = new JButton("Prestar libro");
-            btnPrestar.setPreferredSize(buttonSize);
-            btnPrestar.setMaximumSize(buttonSize);
-            btnPrestar.setAlignmentX(Component.CENTER_ALIGNMENT);
-            btnPrestar.addActionListener(e -> mostrarPrestamo());
-            panel.add(btnPrestar);
+        /* botones para PROFESOR / ALUMNO */
+        if (!"Administrador".equals(tipoActual)) {
+            addButton(p,"Prestar libro",  btnSize, e -> mostrarPrestamo());
+            addButton(p,"Devolver libro", btnSize,
+                    e -> new DevolverLibro(usuarioActual).setVisible(true));
+            addButton(p,"Ver mis préstamos", btnSize,
+                    e -> new MostrarDevolucion(usuarioActual).setVisible(true));
         }
 
-        JButton btnVer = new JButton("Ver ejemplares");
-        btnVer.setPreferredSize(buttonSize);
-        btnVer.setMaximumSize(buttonSize);
-        btnVer.setAlignmentX(Component.CENTER_ALIGNMENT);
-        btnVer.addActionListener(e -> mostrarCatalogoLista());
-        panel.add(btnVer);
+        /* comunes */
+        addButton(p,"Ver ejemplares", btnSize, e -> mostrarCatalogoTabla());
 
-        JButton btnCerrarSesion = new JButton("Cerrar sesión");
-        btnCerrarSesion.setPreferredSize(buttonSize);
-        btnCerrarSesion.setMaximumSize(buttonSize);
-        btnCerrarSesion.setAlignmentX(Component.CENTER_ALIGNMENT);
-        btnCerrarSesion.setForeground(Color.RED);
-        btnCerrarSesion.addActionListener(e -> {
-            frame.dispose();
+        JButton salir = new JButton("Cerrar sesión");
+        salir.setForeground(Color.RED);
+        salir.setMaximumSize(btnSize);
+        salir.setAlignmentX(CENTER_ALIGNMENT);
+        salir.addActionListener(e -> {
+            menu.dispose();
             mostrarLogin();
         });
-        panel.add(Box.createVerticalStrut(15));
-        panel.add(btnCerrarSesion);
+        p.add(Box.createVerticalStrut(15));
+        p.add(salir);
 
-        frame.add(panel);
-        frame.setVisible(true);
+        menu.setVisible(true);
     }
+
+    private void addButton(JPanel panel, String txt, Dimension sz, java.awt.event.ActionListener al) {
+        JButton b = new JButton(txt);
+        b.setMaximumSize(sz);
+        b.setAlignmentX(CENTER_ALIGNMENT);
+        b.addActionListener(al);
+        panel.add(b);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+                             CRUD Ejemplares (ADMIN)
+       ═══════════════════════════════════════════════════════════════════ */
 
     private void mostrarFormulario(String accion) {
-        JFrame frame = new JFrame("Formulario - " + accion.toUpperCase());
-        frame.setSize(500, 300);
-        frame.setLocationRelativeTo(null);
-        JPanel panel = new JPanel(new GridLayout(6, 2, 10, 10));
-        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        JFrame f = new JFrame(accion.toUpperCase()+" ejemplar");
+        f.setSize(500, 300);
+        f.setLocationRelativeTo(null);
 
-        JTextField codField = new JTextField();
-        JTextField tituloField = new JTextField();
-        JTextField autorField = new JTextField();
-        JTextField cantidadField = new JTextField();
-        JComboBox<String> tipoCombo = new JComboBox<>(new String[]{"Libro", "Revista", "Obra", "CD", "Tesis"});
-        JComboBox<String> idiomaCombo = new JComboBox<>(new String[]{"Español", "Inglés"});
+        JPanel panel = new JPanel(new GridLayout(6,2,8,8));
+        panel.setBorder(BorderFactory.createEmptyBorder(18,18,18,18));
+        f.add(panel);
 
-        if (!accion.equals("agregar")) {
-            String cod = JOptionPane.showInputDialog("Ingrese el código de identificación interna:");
-            if (cod == null || !catalogo.containsKey(cod)) {
-                JOptionPane.showMessageDialog(null, "Código no encontrado.");
-                return;
-            }
-            Material mat = catalogo.get(cod);
-            codField.setText(cod);
-            tituloField.setText(mat.titulo);
-            autorField.setText(mat.autor);
-            tipoCombo.setSelectedItem(mat.tipo);
-            idiomaCombo.setSelectedItem(mat.idioma);
+        JTextField codTF     = new JTextField();
+        JTextField titTF     = new JTextField();
+        JTextField autorTF   = new JTextField();
+        JTextField cantTF    = new JTextField();
+        JComboBox<String> tipoCB   = new JComboBox<>(new String[]{"Libro","Revista","Obra","CD","Tesis"});
+        JComboBox<String> idiomaCB = new JComboBox<>(new String[]{"Español","Inglés"});
+
+        if (!"agregar".equals(accion)) {
+            String c = JOptionPane.showInputDialog("Código del ejemplar:");
+            if (c==null || !catalogo.containsKey(c)) { JOptionPane.showMessageDialog(f,"No encontrado"); return; }
+            Material m = catalogo.get(c);
+            codTF .setText(c);
+            titTF .setText(m.titulo);
+            autorTF.setText(m.autor);
+            tipoCB .setSelectedItem(m.tipo);
+            idiomaCB.setSelectedItem(m.idioma);
         }
 
-        panel.add(new JLabel("Título:"));
-        panel.add(tituloField);
-        panel.add(new JLabel("Autor:"));
-        panel.add(autorField);
-        panel.add(new JLabel("Cantidad:"));
-        panel.add(cantidadField);
-        panel.add(new JLabel("Tipo:"));
-        panel.add(tipoCombo);
-        panel.add(new JLabel("Idioma:"));
-        panel.add(idiomaCombo);
+        panel.add(new JLabel("Título:"));  panel.add(titTF);
+        panel.add(new JLabel("Autor:"));   panel.add(autorTF);
+        panel.add(new JLabel("Cantidad:"));panel.add(cantTF);
+        panel.add(new JLabel("Tipo:"));    panel.add(tipoCB);
+        panel.add(new JLabel("Idioma:"));  panel.add(idiomaCB);
 
-        JButton btn = new JButton(accion.equals("agregar") ? "Guardar" : (accion.equals("editar") ? "Actualizar" : "Borrar"));
-        btn.addActionListener(e -> {
-            String tipo = (String) tipoCombo.getSelectedItem();
-            String idioma = (String) idiomaCombo.getSelectedItem();
-            String titulo = tituloField.getText();
-            String autor = autorField.getText();
-            String cantidadText = cantidadField.getText();
-            int cantidad = 1;
+        JButton ok = new JButton(switch (accion) {
+            case "agregar" -> "Guardar";
+            case "editar"  -> "Actualizar";
+            default        -> "Borrar";
+        });
+        panel.add(ok);
 
-            try {
-                if (!cantidadText.isEmpty()) {
-                    cantidad = Integer.parseInt(cantidadText);
-                }
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(frame, "Cantidad inválida. Se agregará 1 unidad por defecto.");
-            }
+        ok.addActionListener(e -> {
+            String tipo   = (String) tipoCB.getSelectedItem();
+            String idioma = (String) idiomaCB.getSelectedItem();
+            String tit    = titTF.getText();
+            String autor  = autorTF.getText();
+            int cant;
+            try { cant = cantTF.getText().isEmpty()?1:Integer.parseInt(cantTF.getText()); }
+            catch(NumberFormatException ex){ cant=1; }
 
-            if (accion.equals("agregar")) {
-                for (int i = 0; i < cantidad; i++) {
+            if ("agregar".equals(accion)) {
+                for (int i=0;i<cant;i++){
                     String codigo = generarCodigo(tipo);
-                    catalogo.put(codigo, new Material(codigo, titulo, autor, tipo, idioma));
+                    catalogo.put(codigo,new Material(codigo,tit,autor,tipo,idioma));
                 }
-                JOptionPane.showMessageDialog(frame, "Se agregaron " + cantidad + " unidades.");
-            } else if (accion.equals("editar")) {
-                String cod = codField.getText();
-                catalogo.put(cod, new Material(cod, titulo, autor, tipo, idioma));
-                JOptionPane.showMessageDialog(frame, "Ejemplar actualizado.");
-            } else if (accion.equals("borrar")) {
-                String cod = codField.getText();
-                catalogo.remove(cod);
-                JOptionPane.showMessageDialog(frame, "Ejemplar eliminado.");
+                JOptionPane.showMessageDialog(f,"Se agregaron "+cant+" unidades.");
+            } else {
+                String c = codTF.getText();
+                if ("editar".equals(accion)) {
+                    catalogo.put(c,new Material(c,tit,autor,tipo,idioma));
+                    JOptionPane.showMessageDialog(f,"Actualizado.");
+                } else { // borrar
+                    catalogo.remove(c);
+                    JOptionPane.showMessageDialog(f,"Eliminado.");
+                }
             }
-            frame.dispose();
+            f.dispose();
         });
 
-        panel.add(btn);
-
-        frame.add(panel);
-        frame.setVisible(true);
+        f.setVisible(true);
     }
 
-    private void mostrarCatalogoLista() {
-        String[] columnas = {"Código", "Título", "Autor", "Tipo", "Idioma"};
-        DefaultTableModel model = new DefaultTableModel(columnas, 0);
+    /* ═══════════════════════════════════════════════════════════════════
+                                  LISTADO
+       ═══════════════════════════════════════════════════════════════════ */
 
-        for (Material m : catalogo.values()) {
-            model.addRow(new Object[]{m.codigo, m.titulo, m.autor, m.tipo, m.idioma});
-        }
+    private void mostrarCatalogoTabla() {
+        String[] col = {"Código","Título","Autor","Tipo","Idioma"};
+        DefaultTableModel m = new DefaultTableModel(col,0);
+        catalogo.values().forEach(mat ->
+                m.addRow(new Object[]{mat.codigo,mat.titulo,mat.autor,mat.tipo,mat.idioma}));
 
-        JTable tabla = new JTable(model);
-        JScrollPane scrollPane = new JScrollPane(tabla);
-        JFrame tablaFrame = new JFrame("Listado de Ejemplares");
-        tablaFrame.setSize(600, 400);
-        tablaFrame.setLocationRelativeTo(null);
-        tablaFrame.add(scrollPane);
-        tablaFrame.setVisible(true);
+        JTable tabla = new JTable(m);
+        JFrame t = new JFrame("Ejemplares");
+        t.setSize(600,400);
+        t.setLocationRelativeTo(null);
+        t.add(new JScrollPane(tabla));
+        t.setVisible(true);
     }
+
+    /* ═══════════════════════════════════════════════════════════════════
+                                   PRÉSTAMO
+       ═══════════════════════════════════════════════════════════════════ */
 
     private void mostrarPrestamo() {
-        JFrame prestamoFrame = new JFrame("Préstamo de libros");
-        prestamoFrame.setSize(400, 250);
-        prestamoFrame.setLocationRelativeTo(null);
+        JFrame pr = new JFrame("Prestar libro");
+        pr.setSize(400,180);
+        pr.setLocationRelativeTo(null);
 
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        JPanel p = new JPanel();
+        p.setLayout(new BoxLayout(p,BoxLayout.Y_AXIS));
+        pr.add(p);
 
-        JLabel userLabel = new JLabel("Ingresa tu nombre de usuario:");
-        JTextField userField = new JTextField(15);
+        JLabel l  = new JLabel("Código del libro a prestar:");
+        JTextField codigoTF = new JTextField(12);
+        JButton ok = new JButton("Prestar");
 
-        JLabel label = new JLabel("Ingresa el código de identificación interna del libro:");
-        JTextField codigoField = new JTextField(15);
+        p.add(l); p.add(codigoTF); p.add(ok);
+        pr.setVisible(true);
 
-        JButton prestarBtn = new JButton("Prestar");
+        ok.addActionListener(e -> {
+            String codigo = codigoTF.getText().trim();
+            /* validaciones */
+            if (!catalogo.containsKey(codigo))              { msg(pr,"Código no válido."); return; }
+            if (usuariosConMora.getOrDefault(usuarioActual,false)) { msg(pr,"Tienes mora."); return; }
+            if (prestamos.containsKey(codigo))              { msg(pr,"Ya está prestado."); return; }
 
-        panel.add(userLabel);
-        panel.add(userField);
-        panel.add(label);
-        panel.add(codigoField);
-        panel.add(prestarBtn);
+            List<String> lista = prestamosPorUser.computeIfAbsent(usuarioActual, k->new ArrayList<>());
+            if (lista.size()>=LIMITE_PRESTAMOS)             { msg(pr,"Límite "+LIMITE_PRESTAMOS+"."); return; }
+            lista.add(codigo);
+            prestamos.put(codigo,"prestado");
 
-        prestamoFrame.add(panel);
-        prestamoFrame.setVisible(true);
-
-        prestarBtn.addActionListener(e -> {
-            String usuario = userField.getText().trim();
-            String codigo = codigoField.getText().trim();
-
-            boolean registrado = alumnoCreds.containsKey(usuario) || profCreds.containsKey(usuario);
-            boolean tieneMora = usuariosConMora.getOrDefault(usuario, false);
-
-            if (!registrado) {
-                JOptionPane.showMessageDialog(prestamoFrame, "Usuario no registrado.");
-                return;
-            }
-
-            if (tieneMora) {
-                JOptionPane.showMessageDialog(prestamoFrame, "No puedes realizar préstamos debido a una mora.");
-                return;
-            }
-
-            if (!catalogo.containsKey(codigo)) {
-                JOptionPane.showMessageDialog(prestamoFrame, "Código no válido.");
-                return;
-            }
-
-            if (prestamos.containsKey(codigo)) {
-                JOptionPane.showMessageDialog(prestamoFrame, "El libro ya está prestado.");
-                return;
-            }
-
-            List<String> prestamosUsuario = prestamosPorUsuario.getOrDefault(usuario, new ArrayList<>());
-
-            if (prestamosUsuario.contains(codigo)) {
-                JOptionPane.showMessageDialog(prestamoFrame, "Ya tienes prestado este libro.");
-            } else if (prestamosUsuario.size() >= LIMITE_PRESTAMOS) {
-                JOptionPane.showMessageDialog(prestamoFrame, "Límite de préstamos alcanzado (máx. " + LIMITE_PRESTAMOS + ").");
-            } else {
-                prestamosUsuario.add(codigo);
-                prestamosPorUsuario.put(usuario, prestamosUsuario);
-                prestamos.put(codigo, "prestado");
-
-                JOptionPane.showMessageDialog(prestamoFrame, "Libro prestado correctamente.");
-                prestamoFrame.dispose();
-            }
+            msg(pr,"Préstamo registrado.");
+            pr.dispose();
         });
     }
 
-    private String generarCodigo(String tipo) {
-        contadorPorTipo.putIfAbsent(tipo, 0);
-        contadorPorTipo.put(tipo, contadorPorTipo.get(tipo) + 1);
-        return tipo.substring(0, 1).toUpperCase() + contadorPorTipo.get(tipo);
+    /* ═══════════════════════════════════════════════════════════════════
+                              utilidades
+       ═══════════════════════════════════════════════════════════════════ */
+
+    private void msg(Component c, String s){ JOptionPane.showMessageDialog(c,s); }
+
+    private String generarCodigo(String tipo){
+        contadorPorTipo.merge(tipo,1,Integer::sum);
+        return tipo.substring(0,1).toUpperCase()+contadorPorTipo.get(tipo);
     }
 
-    static class Material {
-        String codigo;
-        String titulo;
-        String autor;
-        String tipo;
-        String idioma;
-
-        Material(String codigo, String titulo, String autor, String tipo, String idioma) {
-            this.codigo = codigo;
-            this.titulo = titulo;
-            this.autor = autor;
-            this.tipo = tipo;
-            this.idioma = idioma;
+    /* ─────────── modelo sencillo ─────────── */
+    public static class Material {
+        public final String codigo,titulo,autor,tipo,idioma;
+        public Material(String c,String t,String a,String ti,String id){
+            codigo=c; titulo=t; autor=a; tipo=ti; idioma=id;
         }
     }
 }
