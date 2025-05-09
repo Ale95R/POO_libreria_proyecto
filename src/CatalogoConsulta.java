@@ -3,6 +3,7 @@ import javax.swing.table.DefaultTableModel; // Agregar esta importación
 import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
+import java.util.List;
 
 public class CatalogoConsulta extends JFrame {
 
@@ -11,6 +12,8 @@ public class CatalogoConsulta extends JFrame {
     private static HashMap<String, String> alumnoCreds = new HashMap<>();
     private static HashMap<String, Material> catalogo = new HashMap<>();
     private static Map<String, Integer> contadorPorTipo = new HashMap<>();
+    private static final int LIMITE_PRESTAMOS = 3;
+    private static Map<String, List<String>> prestamosPorUsuario = new HashMap<>();
     private static Map<String, String> prestamos = new HashMap<>();
     private static Map<String, Boolean> usuariosConMora = new HashMap<>();
 
@@ -351,11 +354,29 @@ public class CatalogoConsulta extends JFrame {
                 return;
             }
 
-            if (catalogo.containsKey(codigo) && !prestamos.containsKey(codigo)) {
-                prestamos.put(codigo, "prestado");
-                JOptionPane.showMessageDialog(prestamoFrame, "El libro ha sido prestado.");
+            if (!catalogo.containsKey(codigo)) {
+                JOptionPane.showMessageDialog(prestamoFrame, "Código no válido.");
+                return;
+            }
+
+            if (prestamos.containsKey(codigo)) {
+                JOptionPane.showMessageDialog(prestamoFrame, "El libro ya está prestado.");
+                return;
+            }
+
+            List<String> prestamosUsuario = prestamosPorUsuario.getOrDefault(usuario, new ArrayList<>());
+
+            if (prestamosUsuario.contains(codigo)) {
+                JOptionPane.showMessageDialog(prestamoFrame, "Ya tienes prestado este libro.");
+            } else if (prestamosUsuario.size() >= LIMITE_PRESTAMOS) {
+                JOptionPane.showMessageDialog(prestamoFrame, "Límite de préstamos alcanzado (máx. " + LIMITE_PRESTAMOS + ").");
             } else {
-                JOptionPane.showMessageDialog(prestamoFrame, "Código no válido o libro ya prestado.");
+                prestamosUsuario.add(codigo);
+                prestamosPorUsuario.put(usuario, prestamosUsuario);
+                prestamos.put(codigo, "prestado");
+
+                JOptionPane.showMessageDialog(prestamoFrame, "Libro prestado correctamente.");
+                prestamoFrame.dispose();
             }
         });
     }
