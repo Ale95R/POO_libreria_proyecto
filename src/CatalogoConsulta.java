@@ -62,7 +62,6 @@ public class CatalogoConsulta extends JFrame {
         login.add(form);
         login.setVisible(true);
 
-        /* ───── listener ───── */
         loginBtn.addActionListener(e -> {
             String tipo = (String) tipoCB.getSelectedItem();
             String usr  = userTF.getText().trim();
