@@ -2,7 +2,7 @@ import javax.swing.*;
 import java.time.LocalDate;
 import java.util.List;
 
-/** Ventana simple para devolver un libro y calcular la mora. */
+/** calculo de mora. */
 public class DevolverLibro extends JFrame {
 
     public DevolverLibro(String usuario){
@@ -25,7 +25,6 @@ public class DevolverLibro extends JFrame {
             Prestamo pmo = CatalogoConsulta.prestamos.get(codigo);
             double mora  = Mora.calcularMora(pmo, LocalDate.now());
 
-            /* actualizar estructuras */
             lista.remove(codigo); CatalogoConsulta.prestamos.remove(codigo);
             pmo.marcarDevuelto();
 

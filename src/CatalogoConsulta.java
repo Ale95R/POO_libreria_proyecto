@@ -49,13 +49,13 @@ public class CatalogoConsulta extends JFrame {
     }
 
     /* ======================================================================
-                           PERSISTENCIA BINARIA
+                           Guardado de Datos
        ====================================================================== */
 
     @SuppressWarnings("unchecked")
     private static void cargarDatos() {
         File f = new File(DATA_FILE);
-        if (!f.exists()) return;                       // primera ejecución, nada guardado
+        if (!f.exists()) return;
         try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(f))) {
             catalogo        .putAll((Map<String,Material>)   in.readObject());
             contadorPorTipo .putAll((Map<String,Integer>)    in.readObject());
@@ -183,7 +183,7 @@ public class CatalogoConsulta extends JFrame {
     }
 
     /* ======================================================================
-                          FORMULARIO CRUD EJEMPLAR
+                                   FORMULARIO
        ====================================================================== */
     private void mostrarFormulario(String accion) {
         JFrame f = new JFrame(accion.toUpperCase()+" ejemplar");
@@ -324,7 +324,7 @@ public class CatalogoConsulta extends JFrame {
     }
 
     /* ======================================================================
-                              UTILIDADES
+                                 COMPLEMENTOS
        ====================================================================== */
     private void msg(Component c, String s) { JOptionPane.showMessageDialog(c, s); }
 
