@@ -38,8 +38,8 @@ public class CatalogoConsulta extends JFrame {
         alumnoCreds.put("alumno3","123");
 
         /* ---- usuario con mora para demo ---- */
-        alumnoCreds.put("alumnoMoroso", "123");
-        deudaPorUsuario.put("alumnoMoroso", 8.50);
+        alumnoCreds.put("alumno4", "123");
+        deudaPorUsuario.put("alumno4", 8.50);
 
         /* ---- Cargar datos previos (si existen) ---- */
         cargarDatos();
