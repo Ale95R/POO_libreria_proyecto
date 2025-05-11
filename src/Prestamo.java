@@ -2,18 +2,31 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 
 public class Prestamo {
-    private String nombreUsuario;
-    private String tituloMaterial;
-    private LocalDate fechaPrestamo;
-    private LocalDate fechaDevolucion;
+
+    private final String usuario;
+    private final String tituloMaterial;
+    private final LocalDate fechaPrestamo;
+    private final LocalDate fechaDevolucion;
     private boolean devuelto;
 
-    public Prestamo(String nombreUsuario, String tituloMaterial, LocalDate fechaPrestamo, LocalDate fechaDevolucion) {
-        this.nombreUsuario = nombreUsuario;
-        this.tituloMaterial = tituloMaterial;
-        this.fechaPrestamo = fechaPrestamo;
-        this.fechaDevolucion = fechaDevolucion;
-        this.devuelto = false;
+    public Prestamo(String usuario,
+                    String tituloMaterial,
+                    LocalDate fechaPrestamo,
+                    LocalDate fechaDevolucion) {
+        this.usuario          = usuario;
+        this.tituloMaterial   = tituloMaterial;
+        this.fechaPrestamo    = fechaPrestamo;
+        this.fechaDevolucion  = fechaDevolucion;
+        this.devuelto         = false;
+    }
+
+    public LocalDate getFechaDevolucion() { return fechaDevolucion; }
+    public String    getTituloMaterial()  { return tituloMaterial;  }
+    public String    getUsuario()         { return usuario;         }
+    public boolean   isDevuelto()         { return devuelto;        }
+
+    public int getAñoPrestamo() {
+        return fechaPrestamo.getYear();
     }
 
     public long calcularDiasRetraso(LocalDate fechaActual) {
@@ -23,15 +36,5 @@ public class Prestamo {
         return 0;
     }
 
-    public int getAñoPrestamo() {
-        return fechaPrestamo.getYear();
-    }
-
-    public void marcarDevuelto() {
-        this.devuelto = true;
-    }
-
-    public String getNombreUsuario() { return nombreUsuario; }
-    public String getTituloMaterial() { return tituloMaterial; }
-    public boolean isDevuelto() { return devuelto; }
+    public void marcarDevuelto() { this.devuelto = true; }
 }
