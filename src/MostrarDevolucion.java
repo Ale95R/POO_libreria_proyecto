@@ -4,7 +4,6 @@ import java.awt.*;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-/** Muestra los préstamos vigentes de un usuario. */
 public class MostrarDevolucion extends JFrame {
 
     public MostrarDevolucion(String usuario){
@@ -33,7 +32,6 @@ public class MostrarDevolucion extends JFrame {
         setVisible(true);
     }
 
-    /* helpers para botón en JTable */
     static class ButtonRenderer extends JButton implements javax.swing.table.TableCellRenderer{
         public ButtonRenderer(){ setOpaque(true); }
         public Component getTableCellRendererComponent(JTable t,Object v,boolean s,boolean f,int r,int c){

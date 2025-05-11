@@ -5,7 +5,6 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.List;
 
-
 public class CatalogoConsulta extends JFrame {
 
     public static final Map<String,String>             adminCreds       = new HashMap<>();
@@ -28,11 +27,15 @@ public class CatalogoConsulta extends JFrame {
        ════════════════════════════════════════ */
     public static void main(String[] args) {
 
-        adminCreds.put("admin","123");
-        profCreds .put("prof","123");
+        adminCreds.put("admin",   "123");
+        profCreds .put("prof",    "123");
         alumnoCreds.put("alumno1","123");
         alumnoCreds.put("alumno2","123");
         alumnoCreds.put("alumno3","123");
+
+        /* ─── usuario con mora para la demostración ─── */
+        alumnoCreds.put("alumnoMoroso", "123");
+        deudaPorUsuario.put("alumnoMoroso",  8.50);
 
         SwingUtilities.invokeLater(() -> new CatalogoConsulta().mostrarLogin());
     }
