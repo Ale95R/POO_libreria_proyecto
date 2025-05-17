@@ -42,5 +42,5 @@ public final class DB {
         }
     }
 
-    private DB() {}   // util‑class
+    private DB() {}   // clase de utilidad
 }

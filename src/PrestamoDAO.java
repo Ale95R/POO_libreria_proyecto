@@ -56,6 +56,5 @@ public class PrestamoDAO {
         return lista;
     }
 
-    /* POJO para JTable */
     public record PrestamoRegistro(String codigo, String titulo, String fechaLimite) {}
 }
