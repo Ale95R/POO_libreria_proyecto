@@ -16,9 +16,7 @@ public class DevolverLibro extends JFrame {
             String codigo=codTF.getText().trim();
             try {
                 if (!prestamoDAO.estaPrestado(codigo)){msg("Ese material no está prestado.");return;}
-                // ejemplo: se cobra $0.50 por día de retraso
                 prestamoDAO.devolver(codigo);
-                // aquí podrías calcular días de retraso y moraDAO.agregarMora(...)
                 msg("Devuelto correctamente.");
                 dispose();
             }catch(SQLException ex){msg(ex.getMessage());}

@@ -2,12 +2,10 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.sql.SQLException;
-import java.time.LocalDate;
 import java.util.List;
 
 public class CatalogoConsulta extends JFrame {
 
-    /* ---------- constantes de negocio ---------- */
     private static final int DIAS_PRESTAMO = 7;
 
     /* ---------- credenciales demo ---------- */
@@ -16,7 +14,7 @@ public class CatalogoConsulta extends JFrame {
     public static final java.util.Map<String,String> alumnoCreds = java.util.Map.of(
             "alumno1","123","alumno2","123","alumno3","123","alumnoMoroso","123");
 
-    /* ---------- DAOs ---------- */
+    /* ---------- Clases para SQL ---------- */
     private final MaterialDAO materialDAO = new MaterialDAO();
     private final PrestamoDAO prestamoDAO = new PrestamoDAO();
     private final MoraDAO     moraDAO     = new MoraDAO();
@@ -105,7 +103,7 @@ public class CatalogoConsulta extends JFrame {
         JButton b=new JButton(txt); b.setMaximumSize(d); b.setAlignmentX(CENTER_ALIGNMENT); b.addActionListener(al); p.add(b); return b;
     }
 
-    /* =========== CRUD Material usando DAO =========== */
+    /* =========== Material usando SQL =========== */
     private void formMaterial(String accion) {
         JFrame f = new JFrame(accion.toUpperCase()+" ejemplar");
         f.setSize(500,300); f.setLocationRelativeTo(null);
@@ -196,7 +194,7 @@ public class CatalogoConsulta extends JFrame {
         } catch(SQLException ex){msg(this,ex.getMessage());}
     }
 
-    /* ==================== Utils ==================== */
+    /* ==================== Utilidades ==================== */
     private void msg(Component c,String s){JOptionPane.showMessageDialog(c,s);}
 
     private String generarCodigo(String tipo) throws SQLException {
@@ -205,7 +203,6 @@ public class CatalogoConsulta extends JFrame {
         int n=materialDAO.siguienteConsecutivo(pref);
         return pref+String.format("%05d",n);
     }
-
-    /* ---------- record Material ---------- */
+    
     public record Material(String codigo,String titulo,String autor,String tipo,String idioma){}
 }

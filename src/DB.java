@@ -5,7 +5,6 @@ public final class DB {
     private static final String URL = "jdbc:sqlite:biblioteca.db";
     private static Connection conn;
 
-    /** Conexión singleton reutilizable. */
     public static Connection get() throws SQLException {
         if (conn == null || conn.isClosed()) {
             conn = DriverManager.getConnection(URL);
@@ -14,7 +13,7 @@ public final class DB {
         return conn;
     }
 
-    /** Crea el esquema solo la primera vez. */
+    /** Creacion de esquema */
     private static void inicializarTablas() throws SQLException {
         String ddl = """
             PRAGMA foreign_keys = ON;

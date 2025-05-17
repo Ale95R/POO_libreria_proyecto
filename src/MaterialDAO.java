@@ -2,10 +2,9 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Acceso CRUD a la tabla material (SQLite). */
 public class MaterialDAO {
 
-    /* ---------- insertar o actualizar ---------- */
+    /* ---------- insertar material a SQL ---------- */
     public void guardar(CatalogoConsulta.Material m) throws SQLException {
         String sql = """
             INSERT INTO material(codigo,titulo,autor,tipo,idioma)
@@ -35,7 +34,6 @@ public class MaterialDAO {
         }
     }
 
-    /* ---------- existe ---------- */
     public boolean existe(String codigo) throws SQLException {
         try (PreparedStatement ps = DB.get().prepareStatement(
                 "SELECT 1 FROM material WHERE codigo = ?")) {
@@ -63,7 +61,7 @@ public class MaterialDAO {
         return lista;
     }
 
-    /* ---------- siguienteConsecutivo ---------- */
+    /* ---------- Numeracion de codigo correlativo ---------- */
     public int siguienteConsecutivo(String prefijo) throws SQLException {
         String sql = "SELECT MAX(substr(codigo,4)) AS num FROM material WHERE codigo LIKE ?";
         try (PreparedStatement ps = DB.get().prepareStatement(sql)) {
